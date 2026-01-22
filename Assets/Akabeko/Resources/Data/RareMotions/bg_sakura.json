@@ -1,0 +1,29 @@
+{
+    "motionId": "bg_sakura",
+    "motionName": "桜背景",
+    "type": 1,
+    "conditions": [
+        {
+            "type": 6,
+            "parameters": [
+                {
+                    "key": "month",
+                    "value": "3"
+                }
+            ]
+        },
+        {
+            "type": 0,
+            "parameters": [
+                {
+                    "key": "rate",
+                    "value": "0.1"
+                }
+            ]
+        }
+    ],
+    "rarity": 1,
+    "materialName": "",
+    "backgroundName": "bg_sakura",
+    "animationName": ""
+}

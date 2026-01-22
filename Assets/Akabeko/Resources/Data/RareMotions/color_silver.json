@@ -1,0 +1,20 @@
+{
+    "motionId": "silver_beko",
+    "motionName": "銀べこ",
+    "type": 0,
+    "conditions": [
+        {
+            "type": 0,
+            "parameters": [
+                {
+                    "key": "rate",
+                    "value": "0.03"
+                }
+            ]
+        }
+    ],
+    "rarity": 1,
+    "materialName": "Mat_Silver",
+    "backgroundName": "",
+    "animationName": ""
+}

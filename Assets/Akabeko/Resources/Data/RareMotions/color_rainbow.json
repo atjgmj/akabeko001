@@ -1,0 +1,29 @@
+{
+    "motionId": "rainbow_beko",
+    "motionName": "虹べこ",
+    "type": 0,
+    "conditions": [
+        {
+            "type": 1,
+            "parameters": [
+                {
+                    "key": "part",
+                    "value": "ear"
+                }
+            ]
+        },
+        {
+            "type": 0,
+            "parameters": [
+                {
+                    "key": "rate",
+                    "value": "0.05"
+                }
+            ]
+        }
+    ],
+    "rarity": 2,
+    "materialName": "Mat_Rainbow",
+    "backgroundName": "",
+    "animationName": ""
+}
