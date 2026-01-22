@@ -78,3 +78,5 @@ Thumbs.db
 
 # WebGL Build
 WebGLBuild/
+# Docs for GitHub Pages
+!/docs/
