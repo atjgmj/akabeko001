@@ -19,6 +19,11 @@ namespace Akabeko
         private StageManager stageManager;
         private AkabekoController akabekoController;
 
+        // 色変更のための追加メンバ変数
+        private bool isRainbowActive = false;
+        private Material dynamicMaterial;
+        private Dictionary<Renderer, Material> defaultMaterials = new Dictionary<Renderer, Material>();
+
         public event Action<RareMotionData> OnRareMotionTriggered;
 
         private void Awake()
@@ -28,6 +33,92 @@ namespace Akabeko
             stageManager = FindFirstObjectByType<StageManager>();
             akabekoController = FindFirstObjectByType<AkabekoController>();
             LoadRareMotions();
+        }
+
+        private void Start()
+        {
+            // レンダーの初期マテリアルを保存
+            if (akabekoController != null)
+            {
+                Renderer[] renderers = akabekoController.GetComponentsInChildren<Renderer>();
+                foreach (var r in renderers)
+                {
+                    if (r != null && !defaultMaterials.ContainsKey(r))
+                    {
+                        defaultMaterials[r] = r.sharedMaterial;
+                    }
+                }
+            }
+        }
+
+        private void Update()
+        {
+            // 虹色のアニメーション処理
+            if (isRainbowActive && dynamicMaterial != null)
+            {
+                // 時間経過で色相(Hue)を回転させる (2秒で1周)
+                float hue = (Time.time * 0.5f) % 1f;
+                Color rainbowColor = Color.HSVToRGB(hue, 1f, 1f);
+
+                if (dynamicMaterial.HasProperty("_BaseColor")) dynamicMaterial.SetColor("_BaseColor", rainbowColor);
+                else if (dynamicMaterial.HasProperty("_Color")) dynamicMaterial.SetColor("_Color", rainbowColor);
+            }
+
+            // 検証用のキーボードデバッグ操作
+            if (Input.GetKeyDown(KeyCode.Alpha1))
+            {
+                Debug.Log("[Debug] Triggering Gold Rare Motion via Key 1");
+                RareMotionData debugGold = new RareMotionData
+                {
+                    motionId = "debug_gold",
+                    motionName = "金べこ (Debug)",
+                    type = MotionType.COLOR_CHANGE,
+                    materialName = "Mat_Gold"
+                };
+                TriggerRareMotion(debugGold);
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha2))
+            {
+                Debug.Log("[Debug] Triggering Silver Rare Motion via Key 2");
+                RareMotionData debugSilver = new RareMotionData
+                {
+                    motionId = "debug_silver",
+                    motionName = "銀べこ (Debug)",
+                    type = MotionType.COLOR_CHANGE,
+                    materialName = "Mat_Silver"
+                };
+                TriggerRareMotion(debugSilver);
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha3))
+            {
+                Debug.Log("[Debug] Triggering Rainbow Rare Motion via Key 3");
+                RareMotionData debugRainbow = new RareMotionData
+                {
+                    motionId = "debug_rainbow",
+                    motionName = "虹べこ (Debug)",
+                    type = MotionType.COLOR_CHANGE,
+                    materialName = "Mat_Rainbow"
+                };
+                TriggerRareMotion(debugRainbow);
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha4))
+            {
+                Debug.Log("[Debug] Resetting colors via Key 4");
+                ResetColor();
+            }
+        }
+
+        private void ResetColor()
+        {
+            isRainbowActive = false;
+            foreach (var kvp in defaultMaterials)
+            {
+                if (kvp.Key != null)
+                {
+                    kvp.Key.material = kvp.Value;
+                }
+            }
+            Debug.Log("[RareMotionSystem] Colors reset to default.");
         }
 
         /// <summary>
@@ -174,6 +265,8 @@ namespace Akabeko
         {
             if (akabekoController == null) return;
 
+            isRainbowActive = false;
+
             // マテリアルをResourcesからロード
             Material newMat = Resources.Load<Material>($"Materials/{motion.materialName}");
             if (newMat != null)
@@ -188,7 +281,52 @@ namespace Akabeko
             }
             else
             {
-                Debug.LogWarning($"[RareMotionSystem] Material not found in Resources/Materials: {motion.materialName}");
+                Debug.LogWarning($"[RareMotionSystem] Material not found in Resources/Materials: {motion.materialName}. Generating dynamic fallback material...");
+                
+                Renderer mainRenderer = akabekoController.GetComponentInChildren<Renderer>();
+                if (mainRenderer != null)
+                {
+                    Material baseMat = mainRenderer.sharedMaterial;
+                    dynamicMaterial = Instantiate(baseMat); // マテリアルのコピー
+
+                    Color targetColor = Color.white;
+                    float metallic = 0f;
+                    float smoothness = 0.5f;
+
+                    if (motion.materialName.Contains("Gold"))
+                    {
+                        targetColor = new Color(1.0f, 0.85f, 0.2f); // 金色
+                        metallic = 0.9f;
+                        smoothness = 0.8f;
+                    }
+                    else if (motion.materialName.Contains("Silver"))
+                    {
+                        targetColor = new Color(0.9f, 0.9f, 0.9f); // 銀色
+                        metallic = 0.9f;
+                        smoothness = 0.8f;
+                    }
+                    else if (motion.materialName.Contains("Rainbow"))
+                    {
+                        isRainbowActive = true;
+                        targetColor = Color.HSVToRGB(0f, 1f, 1f); // 初期カラー（赤）
+                        metallic = 0.5f;
+                        smoothness = 0.9f;
+                    }
+
+                    // カラープロパティ設定
+                    if (dynamicMaterial.HasProperty("_BaseColor")) dynamicMaterial.SetColor("_BaseColor", targetColor);
+                    else if (dynamicMaterial.HasProperty("_Color")) dynamicMaterial.SetColor("_Color", targetColor);
+                    
+                    if (dynamicMaterial.HasProperty("_Metallic")) dynamicMaterial.SetFloat("_Metallic", metallic);
+                    if (dynamicMaterial.HasProperty("_Smoothness")) dynamicMaterial.SetFloat("_Smoothness", smoothness);
+
+                    Renderer[] renderers = akabekoController.GetComponentsInChildren<Renderer>();
+                    foreach (var r in renderers)
+                    {
+                        r.material = dynamicMaterial;
+                    }
+                    Debug.Log($"[RareMotionSystem] Dynamic material applied for: {motion.materialName}");
+                }
             }
         }
         

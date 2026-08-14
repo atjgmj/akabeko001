@@ -28,6 +28,55 @@ namespace Akabeko
         {
             screenshotManager = FindFirstObjectByType<ScreenshotManager>();
             shareManager = FindFirstObjectByType<ShareManager>();
+
+            // インスペクターで参照が未設定の場合、Canvas配下から自動探索して割り当てます
+            Canvas canvas = FindFirstObjectByType<Canvas>();
+            if (canvas != null)
+            {
+                Transform[] childTransforms = canvas.GetComponentsInChildren<Transform>(true);
+                
+                if (screenshotButton == null)
+                {
+                    foreach (Transform t in childTransforms)
+                    {
+                        if (t.name == "ScreenshotButton")
+                        {
+                            screenshotButton = t.GetComponent<Button>();
+                            break;
+                        }
+                    }
+                }
+
+                if (shareButton == null)
+                {
+                    foreach (Transform t in childTransforms)
+                    {
+                        if (t.name == "ShareButton")
+                        {
+                            shareButton = t.GetComponent<Button>();
+                            break;
+                        }
+                    }
+                }
+
+                if (rareMotionPanel == null)
+                {
+                    foreach (Transform t in childTransforms)
+                    {
+                        if (t.name == "RareMotionPanel")
+                        {
+                            rareMotionPanel = t.gameObject;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // テキストの自動アタッチ
+            if (rareMotionPanel != null && rareMotionText == null)
+            {
+                rareMotionText = rareMotionPanel.GetComponentInChildren<TextMeshProUGUI>(true);
+            }
         }
 
         private void Start()

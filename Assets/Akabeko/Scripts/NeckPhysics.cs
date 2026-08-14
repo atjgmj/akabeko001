@@ -25,9 +25,19 @@ namespace Akabeko
         [SerializeField] private Vector3 currentRotation;
         [SerializeField] private Vector3 angularVelocity;
 
+        [Header("Shake/Nod Detection Settings")]
+        [SerializeField] private float shakeAngleThreshold = 1.0f; // 揺れと判定する最小角度(度)
+
+        public event System.Action OnNeckShakeCounted;
+
         private Vector3 targetRotation = Vector3.zero;
         private Quaternion initialRotation;
         private bool hasInitialized = false;
+
+        private float lastSignX = 0f;
+        private float lastSignY = 0f;
+        private float peakAbsX = 0f;
+        private float peakAbsY = 0f;
 
         private void Start()
         {
@@ -46,6 +56,13 @@ namespace Akabeko
 
             initialRotation = neckTransform.localRotation;
             currentRotation = Vector3.zero;
+
+            // 揺れカウント用の初期極性をセット
+            lastSignX = Mathf.Sign(currentRotation.x);
+            lastSignY = Mathf.Sign(currentRotation.y);
+            peakAbsX = 0f;
+            peakAbsY = 0f;
+
             hasInitialized = true;
             Debug.Log($"[V2.0] NeckPhysics Initialized. Rotation: {initialRotation.eulerAngles}");
 
@@ -74,6 +91,45 @@ namespace Akabeko
             currentRotation.x = Mathf.Clamp(currentRotation.x, -maxAngleX, maxAngleX);
             currentRotation.y = Mathf.Clamp(currentRotation.y, -maxAngleY, maxAngleY);
             currentRotation.z = Mathf.Clamp(currentRotation.z, -maxAngleZ, maxAngleZ);
+
+            // 物理挙動後の揺れ検出 (X軸: 縦振り, Y軸: 横振り)
+            DetectShakeOscillation();
+        }
+
+        private void DetectShakeOscillation()
+        {
+            float absX = Mathf.Abs(currentRotation.x);
+            float absY = Mathf.Abs(currentRotation.y);
+
+            // 現在の半周期内の最大振幅を更新
+            if (absX > peakAbsX) peakAbsX = absX;
+            if (absY > peakAbsY) peakAbsY = absY;
+
+            // X軸（縦の首振り）のゼロクロス検出
+            float signX = Mathf.Sign(currentRotation.x);
+            if (signX != lastSignX && currentRotation.x != 0f)
+            {
+                // 一定以上の振幅（うなずき）があった場合にカウント
+                if (peakAbsX >= shakeAngleThreshold)
+                {
+                    OnNeckShakeCounted?.Invoke();
+                }
+                lastSignX = signX;
+                peakAbsX = 0f; // 次の半周期のためにピーク値をリセット
+            }
+
+            // Y軸（横の首振り）のゼロクロス検出
+            float signY = Mathf.Sign(currentRotation.y);
+            if (signY != lastSignY && currentRotation.y != 0f)
+            {
+                // 一定以上の振幅（横振り）があった場合にカウント
+                if (peakAbsY >= shakeAngleThreshold)
+                {
+                    OnNeckShakeCounted?.Invoke();
+                }
+                lastSignY = signY;
+                peakAbsY = 0f;
+            }
         }
 
         private void LateUpdate()

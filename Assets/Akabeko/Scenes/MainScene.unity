@@ -348,6 +348,9 @@ MonoBehaviour:
   stageLight: {fileID: 762238653}
   defaultLightColor: {r: 1, g: 1, b: 1, a: 1}
   defaultFloorColor: {r: 0.9, g: 0.9, b: 0.9, a: 1}
+  spaceSkybox: {fileID: 2100000, guid: 697dcc1a69e1a2c4ea5db483875ede85, type: 2}
+  seaSkybox: {fileID: 0}
+  volcanSkybox: {fileID: 0}
 --- !u!4 &561734668
 Transform:
   m_ObjectHideFlags: 0

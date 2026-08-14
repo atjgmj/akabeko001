@@ -17,6 +17,7 @@ namespace Akabeko
         private NeckPhysics neckPhysics;
         private RareMotionSystem rareMotionSystem;
         private DataManager dataManager;
+        private DynamicUIOverlay uiOverlay;
 
         private int swipeCount = 0;
 
@@ -32,6 +33,19 @@ namespace Akabeko
 
             rareMotionSystem = GetComponent<RareMotionSystem>();
             dataManager = FindFirstObjectByType<DataManager>();
+
+            // UIの自動アタッチ
+            uiOverlay = FindFirstObjectByType<DynamicUIOverlay>();
+            if (uiOverlay == null)
+            {
+                uiOverlay = gameObject.AddComponent<DynamicUIOverlay>();
+            }
+
+            // StageActionController (ステージアクション統合制御) の自動アタッチ
+            if (GetComponent<StageActionController>() == null)
+            {
+                gameObject.AddComponent<StageActionController>();
+            }
 
             // neckTransformの自動補完
             if (neckTransform == null)
@@ -60,6 +74,11 @@ namespace Akabeko
                 swipeDetector.OnSwipeDetected += HandleSwipe;
                 swipeDetector.OnNeckTapped += HandleNeckTap;
             }
+
+            if (neckPhysics != null)
+            {
+                neckPhysics.OnNeckShakeCounted += HandleNeckShake;
+            }
         }
 
         private void OnDisable()
@@ -69,6 +88,11 @@ namespace Akabeko
                 swipeDetector.OnSwipeDetected -= HandleSwipe;
                 swipeDetector.OnNeckTapped -= HandleNeckTap;
             }
+
+            if (neckPhysics != null)
+            {
+                neckPhysics.OnNeckShakeCounted -= HandleNeckShake;
+            }
         }
 
         private void Start()
@@ -77,13 +101,15 @@ namespace Akabeko
             {
                 swipeCount = dataManager.GetSwipeCount();
             }
+            if (uiOverlay != null)
+            {
+                uiOverlay.SetSwipeCount(swipeCount);
+            }
         }
 
         private void HandleSwipe(SwipeData swipeData)
         {
-            swipeCount++;
-            if (dataManager != null) dataManager.IncrementSwipeCount();
-
+            // スワイプ入力時そのものではなく、実際の物理的な首振り動作（HandleNeckShake）でカウントします。
             if (neckPhysics != null)
             {
                 neckPhysics.ApplySwipeForce(swipeData);
@@ -95,6 +121,20 @@ namespace Akabeko
             }
 
             Debug.Log($"[V2.0] Swipe Detected! Speed: {swipeData.speed:F0}");
+        }
+
+        private void HandleNeckShake()
+        {
+            swipeCount++;
+            if (dataManager != null)
+            {
+                dataManager.IncrementSwipeCount();
+            }
+            if (uiOverlay != null)
+            {
+                uiOverlay.SetSwipeCount(swipeCount);
+            }
+            Debug.Log($"[AkabekoController] Physical Neck Shake counted. Total count: {swipeCount}");
         }
 
         private void HandleNeckTap(Vector3 hitPoint)
