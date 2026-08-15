@@ -84,6 +84,7 @@ namespace Akabeko
 
         public static void ShowRareAlert(string category, string name)
         {
+            if (instance == null) instance = FindFirstObjectByType<DynamicUIOverlay>();
             if (instance != null)
             {
                 instance.TriggerRareAlert(category, name);
@@ -99,6 +100,7 @@ namespace Akabeko
             rareAlertName = name;
             rareAlertTimer = RARE_ALERT_DURATION;
             rareAlertColor = GetAccentColor(category, name);
+            cachedPillTex = MakeRounded(260, 34, 17f, new Color(0.06f, 0.08f, 0.12f, 0.92f), rareAlertColor, 1.5f);
         }
 
         private Color GetAccentColor(string category, string name)
@@ -289,7 +291,7 @@ namespace Akabeko
             percentStyle.fontSize       = Mathf.RoundToInt(14 * scale);
             saveButtonStyle.fontSize    = Mathf.RoundToInt(18 * scale);
             popupStyle.fontSize         = Mathf.RoundToInt(16 * scale);
-            rareAlertStyle.fontSize     = Mathf.RoundToInt(13 * scale);
+            rareAlertStyle.fontSize     = Mathf.RoundToInt(14 * scale);
 
             // --- 0. Top Rare Alert Pill (Modern Game HUD Style e.g. Stage : Space) ---
             if (rareAlertTimer > 0f)
@@ -299,21 +301,22 @@ namespace Akabeko
                 float easeIn = 1f - Mathf.Pow(1f - inProgress, 3f);
                 float alpha = Mathf.Clamp01(rareAlertTimer / 0.5f);
 
-                float targetY = 12f * scale;
-                float startY = -40f * scale;
+                float targetY = 16f * scale;
+                float startY = -45f * scale;
                 float curAlertY = Mathf.Lerp(startY, targetY, easeIn);
 
-                string alertText = $"✦ {rareAlertCategory} : {rareAlertName}";
-                float alertW = Mathf.Max(200f * scale, alertText.Length * 11.5f * scale + 24f * scale);
-                float alertH = 28f * scale;
+                string alertText = $"✦  {rareAlertCategory.ToUpper()} : {rareAlertName}  ✦";
+                float alertW = Mathf.Max(240f * scale, alertText.Length * 11.5f * scale + 30f * scale);
+                float alertH = 34f * scale;
                 float alertX = (sw - alertW) * 0.5f;
 
                 Color prevColor = GUI.color;
                 GUI.color = new Color(1f, 1f, 1f, alpha);
 
-                Texture2D pillTex = MakeRounded(220, 28, 14f, new Color(0.06f, 0.08f, 0.12f, 0.90f), rareAlertColor, 1.2f);
-                GUI.DrawTexture(new Rect(alertX, curAlertY, alertW, alertH), pillTex);
+                if (cachedPillTex == null)
+                    cachedPillTex = MakeRounded(260, 34, 17f, new Color(0.06f, 0.08f, 0.12f, 0.92f), rareAlertColor, 1.5f);
 
+                GUI.DrawTexture(new Rect(alertX, curAlertY, alertW, alertH), cachedPillTex);
                 GUI.Label(new Rect(alertX, curAlertY, alertW, alertH), alertText, rareAlertStyle);
 
                 GUI.color = prevColor;
@@ -354,9 +357,8 @@ namespace Akabeko
                 ShowNotification("Screenshot saved");
             }
 
-            // --- 6. Menu toggle top-right ---
-            float btnSz = 38f * scale;
-            if (GUI.Button(new Rect(sw - btnSz - 14f * scale, 14f * scale, btnSz, btnSz),
+            // --- 6. Admin Panel button top-right '=' ---
+            if (GUI.Button(new Rect(sw - iconSz - 14f * scale, 14f * scale, iconSz, iconSz),
                            showControls ? "X" : "=", menuButtonStyle))
                 showControls = !showControls;
 
@@ -408,7 +410,7 @@ namespace Akabeko
                     activeColor = colEntry.colorName;
                     if (stageActionController != null) stageActionController.ForceSetColor(colEntry.colorName, 30);
                     else if (rareMotionSystem != null) rareMotionSystem.SetColorByName(colEntry.colorName);
-                    ShowNotification($"Test Color: {colEntry.colorName}");
+                    TriggerRareAlert("Color", colEntry.colorName);
                 }
 
                 float pct = colEntry.probability * 100f;
@@ -440,7 +442,7 @@ namespace Akabeko
                     selectedViewStage = stgEntry.stageName;
                     if (stageActionController != null) stageActionController.ForceSetStage(stgEntry.stageName, 30);
                     else if (stageManager != null) stageManager.ChangeScene(stgEntry.stageName.ToLower());
-                    ShowNotification($"Selected Stage: {stgEntry.stageName}");
+                    TriggerRareAlert("Stage", stgEntry.stageName);
                 }
 
                 float pct = stgEntry.probability * 100f;
@@ -503,7 +505,7 @@ namespace Akabeko
                 if (GUI.Button(new Rect(x, 0, itemW, itemH), actDisplayName, isHighlighted ? activeItemBoxStyle : itemBoxStyle))
                 {
                     if (stageActionController != null) stageActionController.ForceTriggerAction(act);
-                    ShowNotification($"Test Action: {actDisplayName}");
+                    TriggerRareAlert("Action", actDisplayName);
                 }
 
                 float pct = currentProb * 100f;
