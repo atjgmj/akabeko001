@@ -140,20 +140,22 @@ namespace Akabeko
         [SerializeField]
         private List<StageProbabilityEntry> stageProbabilities = new List<StageProbabilityEntry>
         {
-            new StageProbabilityEntry { stageName = "Default", probability = 0.90f },
-            new StageProbabilityEntry { stageName = "Space",   probability = 0.01f },
-            new StageProbabilityEntry { stageName = "Sea",     probability = 0.01f },
-            new StageProbabilityEntry { stageName = "Volcano", probability = 0.01f },
+            new StageProbabilityEntry { stageName = "Default",  probability = 0.90f },
+            new StageProbabilityEntry { stageName = "Space",    probability = 0.01f },
+            new StageProbabilityEntry { stageName = "Sea",      probability = 0.01f },
+            new StageProbabilityEntry { stageName = "Volcano",  probability = 0.01f },
+            new StageProbabilityEntry { stageName = "MonoLine", probability = 0.01f },
         };
 
         [Header("3. Stage Action Matrix")]
         [SerializeField]
         private List<StageActionEntry> stages = new List<StageActionEntry>
         {
-            new StageActionEntry { stageName = "default", none = 0.80f, bobbing = 0.00f, flyAway = 0.05f, spin = 0.02f, shake = 0.02f, scalePulse = 0.02f, superNova = 0.01f, wormhole = 0.01f, clones = 0.02f, matrixGlitch = 0.02f, discoParty = 0.01f, tornado = 0.02f, sound = 0f },
-            new StageActionEntry { stageName = "space",   none = 0.00f, bobbing = 1.00f, flyAway = 0.05f, spin = 0.05f, shake = 0.00f, scalePulse = 0.05f, superNova = 0.15f, wormhole = 0.15f, clones = 0.10f, matrixGlitch = 0.05f, discoParty = 0.05f, tornado = 0.05f, sound = 0f },
-            new StageActionEntry { stageName = "sea",     none = 0.60f, bobbing = 0.50f, flyAway = 0.05f, spin = 0.05f, shake = 0.05f, scalePulse = 0.05f, superNova = 0.02f, wormhole = 0.10f, clones = 0.05f, matrixGlitch = 0.02f, discoParty = 0.10f, tornado = 0.05f, sound = 0f },
-            new StageActionEntry { stageName = "volcano", none = 0.50f, bobbing = 0.00f, flyAway = 0.10f, spin = 0.05f, shake = 0.10f, scalePulse = 0.05f, superNova = 0.15f, wormhole = 0.05f, clones = 0.05f, matrixGlitch = 0.10f, discoParty = 0.05f, tornado = 0.15f, sound = 0f },
+            new StageActionEntry { stageName = "default",  none = 0.80f, bobbing = 0.00f, flyAway = 0.05f, spin = 0.02f, shake = 0.02f, scalePulse = 0.02f, superNova = 0.01f, wormhole = 0.01f, clones = 0.02f, matrixGlitch = 0.02f, discoParty = 0.01f, tornado = 0.02f, sound = 0f },
+            new StageActionEntry { stageName = "space",    none = 0.00f, bobbing = 1.00f, flyAway = 0.05f, spin = 0.05f, shake = 0.00f, scalePulse = 0.05f, superNova = 0.15f, wormhole = 0.15f, clones = 0.10f, matrixGlitch = 0.05f, discoParty = 0.05f, tornado = 0.05f, sound = 0f },
+            new StageActionEntry { stageName = "sea",      none = 0.60f, bobbing = 0.50f, flyAway = 0.05f, spin = 0.05f, shake = 0.05f, scalePulse = 0.05f, superNova = 0.02f, wormhole = 0.10f, clones = 0.05f, matrixGlitch = 0.02f, discoParty = 0.10f, tornado = 0.05f, sound = 0f },
+            new StageActionEntry { stageName = "volcano",  none = 0.50f, bobbing = 0.00f, flyAway = 0.10f, spin = 0.05f, shake = 0.10f, scalePulse = 0.05f, superNova = 0.15f, wormhole = 0.05f, clones = 0.05f, matrixGlitch = 0.10f, discoParty = 0.05f, tornado = 0.15f, sound = 0f },
+            new StageActionEntry { stageName = "monoline", none = 0.50f, bobbing = 0.10f, flyAway = 0.05f, spin = 0.10f, shake = 0.05f, scalePulse = 0.05f, superNova = 0.05f, wormhole = 0.05f, clones = 0.10f, matrixGlitch = 0.15f, discoParty = 0.05f, tornado = 0.05f, sound = 0f },
         };
 
         [Header("4. Duration Settings (Head Bob Counts)")]
@@ -263,6 +265,22 @@ namespace Akabeko
             public int maxColorBobs;
         }
 
+        private void EnsureDefaults()
+        {
+            string[] requiredStages = { "Default", "Space", "Sea", "Volcano", "MonoLine" };
+            foreach (var stg in requiredStages)
+            {
+                if (!stageProbabilities.Exists(x => x.stageName.Equals(stg, StringComparison.OrdinalIgnoreCase)))
+                {
+                    stageProbabilities.Add(new StageProbabilityEntry { stageName = stg, probability = 0.01f });
+                }
+                if (!stages.Exists(x => x.stageName.Equals(stg, StringComparison.OrdinalIgnoreCase)))
+                {
+                    stages.Add(new StageActionEntry { stageName = stg.ToLower(), none = 0.50f, bobbing = 0.10f, flyAway = 0.05f, spin = 0.10f, shake = 0.05f, scalePulse = 0.05f, superNova = 0.05f, wormhole = 0.05f, clones = 0.10f, matrixGlitch = 0.15f, discoParty = 0.05f, tornado = 0.05f, sound = 0f });
+                }
+            }
+        }
+
         public void SaveConfig()
         {
             try
@@ -290,28 +308,31 @@ namespace Akabeko
 
         public void LoadConfig()
         {
-            if (!PlayerPrefs.HasKey(PREFS_KEY)) return;
-
-            try
+            if (PlayerPrefs.HasKey(PREFS_KEY))
             {
-                string json = PlayerPrefs.GetString(PREFS_KEY);
-                SaveDataContainer data = JsonUtility.FromJson<SaveDataContainer>(json);
-                if (data != null)
+                try
                 {
-                    if (data.colors != null && data.colors.Count > 0) this.colors = data.colors;
-                    if (data.stageProbabilities != null && data.stageProbabilities.Count > 0) this.stageProbabilities = data.stageProbabilities;
-                    if (data.stages != null && data.stages.Count > 0) this.stages = data.stages;
-                    if (data.minStageBobs > 0) this.minStageBobs = data.minStageBobs;
-                    if (data.maxStageBobs > 0) this.maxStageBobs = data.maxStageBobs;
-                    if (data.minColorBobs > 0) this.minColorBobs = data.minColorBobs;
-                    if (data.maxColorBobs > 0) this.maxColorBobs = data.maxColorBobs;
-                    Debug.Log("[StageActionConfig] Config loaded successfully from PlayerPrefs!");
+                    string json = PlayerPrefs.GetString(PREFS_KEY);
+                    SaveDataContainer data = JsonUtility.FromJson<SaveDataContainer>(json);
+                    if (data != null)
+                    {
+                        if (data.colors != null && data.colors.Count > 0) this.colors = data.colors;
+                        if (data.stageProbabilities != null && data.stageProbabilities.Count > 0) this.stageProbabilities = data.stageProbabilities;
+                        if (data.stages != null && data.stages.Count > 0) this.stages = data.stages;
+                        if (data.minStageBobs > 0) this.minStageBobs = data.minStageBobs;
+                        if (data.maxStageBobs > 0) this.maxStageBobs = data.maxStageBobs;
+                        if (data.minColorBobs > 0) this.minColorBobs = data.minColorBobs;
+                        if (data.maxColorBobs > 0) this.maxColorBobs = data.maxColorBobs;
+                        Debug.Log("[StageActionConfig] Config loaded successfully from PlayerPrefs!");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[StageActionConfig] Failed to load config: {ex.Message}");
                 }
             }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[StageActionConfig] Failed to load config: {ex.Message}");
-            }
+
+            EnsureDefaults();
         }
 
         public void ResetToDefaults()
@@ -326,17 +347,19 @@ namespace Akabeko
             };
             stageProbabilities = new List<StageProbabilityEntry>
             {
-                new StageProbabilityEntry { stageName = "Default", probability = 0.90f },
-                new StageProbabilityEntry { stageName = "Space",   probability = 0.01f },
-                new StageProbabilityEntry { stageName = "Sea",     probability = 0.01f },
-                new StageProbabilityEntry { stageName = "Volcano", probability = 0.01f },
+                new StageProbabilityEntry { stageName = "Default",  probability = 0.90f },
+                new StageProbabilityEntry { stageName = "Space",    probability = 0.01f },
+                new StageProbabilityEntry { stageName = "Sea",      probability = 0.01f },
+                new StageProbabilityEntry { stageName = "Volcano",  probability = 0.01f },
+                new StageProbabilityEntry { stageName = "MonoLine", probability = 0.01f },
             };
             stages = new List<StageActionEntry>
             {
-                new StageActionEntry { stageName = "default", none = 0.90f, bobbing = 0.00f, flyAway = 0.10f, spin = 0.01f, shake = 0.01f, scalePulse = 0.01f, sound = 0f },
-                new StageActionEntry { stageName = "space",   none = 0.00f, bobbing = 1.00f, flyAway = 0.10f, spin = 0.05f, shake = 0.00f, scalePulse = 0.05f, sound = 0f },
-                new StageActionEntry { stageName = "sea",     none = 0.80f, bobbing = 0.50f, flyAway = 0.05f, spin = 0.02f, shake = 0.02f, scalePulse = 0.02f, sound = 0f },
-                new StageActionEntry { stageName = "volcano", none = 0.70f, bobbing = 0.00f, flyAway = 0.15f, spin = 0.10f, shake = 0.20f, scalePulse = 0.10f, sound = 0f },
+                new StageActionEntry { stageName = "default",  none = 0.80f, bobbing = 0.00f, flyAway = 0.05f, spin = 0.02f, shake = 0.02f, scalePulse = 0.02f, superNova = 0.01f, wormhole = 0.01f, clones = 0.02f, matrixGlitch = 0.02f, discoParty = 0.01f, tornado = 0.02f, sound = 0f },
+                new StageActionEntry { stageName = "space",    none = 0.00f, bobbing = 1.00f, flyAway = 0.05f, spin = 0.05f, shake = 0.00f, scalePulse = 0.05f, superNova = 0.15f, wormhole = 0.15f, clones = 0.10f, matrixGlitch = 0.05f, discoParty = 0.05f, tornado = 0.05f, sound = 0f },
+                new StageActionEntry { stageName = "sea",      none = 0.60f, bobbing = 0.50f, flyAway = 0.05f, spin = 0.05f, shake = 0.05f, scalePulse = 0.05f, superNova = 0.02f, wormhole = 0.10f, clones = 0.05f, matrixGlitch = 0.02f, discoParty = 0.10f, tornado = 0.05f, sound = 0f },
+                new StageActionEntry { stageName = "volcano",  none = 0.50f, bobbing = 0.00f, flyAway = 0.10f, spin = 0.05f, shake = 0.10f, scalePulse = 0.05f, superNova = 0.15f, wormhole = 0.05f, clones = 0.05f, matrixGlitch = 0.10f, discoParty = 0.05f, tornado = 0.15f, sound = 0f },
+                new StageActionEntry { stageName = "monoline", none = 0.50f, bobbing = 0.10f, flyAway = 0.05f, spin = 0.10f, shake = 0.05f, scalePulse = 0.05f, superNova = 0.05f, wormhole = 0.05f, clones = 0.10f, matrixGlitch = 0.15f, discoParty = 0.05f, tornado = 0.05f, sound = 0f },
             };
             minStageBobs = 20;
             maxStageBobs = 50;

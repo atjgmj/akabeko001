@@ -639,6 +639,32 @@ namespace Akabeko
             // 宇宙スターダスト粒子の動的生成＆ON/OFF制御
             UpdateStardustParticles(isSpace && bobbingWeight > 0.1f);
 
+            // モノクロ線画ステージでのモーション連動（赤べこの動きでスキャンラインを横に波打たせる）
+            if (stageManager.ActiveStage.Equals("monoline", System.StringComparison.OrdinalIgnoreCase))
+            {
+                float motionSpeed = driftVelocity.magnitude * 2.5f + (isSpinning || isTornado || isSuperNova ? 4.0f : 0.8f);
+
+                Material monoMat = stageManager.GetMonoLineMaterial();
+                if (monoMat != null)
+                {
+                    if (monoMat.HasProperty("_MotionAmount"))
+                        monoMat.SetFloat("_MotionAmount", motionSpeed);
+                    
+                    float offsetY = (Time.time * 0.2f + Mathf.Sin(Time.time * 10f) * motionSpeed * 0.03f) % 1f;
+                    monoMat.mainTextureOffset = new Vector2(0f, offsetY);
+                }
+
+                if (mainCam == null) mainCam = Camera.main;
+                if (mainCam != null)
+                {
+                    ScanlinePostProcess pp = mainCam.GetComponent<ScanlinePostProcess>();
+                    if (pp != null && pp.isEffectActive)
+                    {
+                        pp.motionAmount = Mathf.Lerp(pp.motionAmount, motionSpeed, Time.deltaTime * 5f);
+                    }
+                }
+            }
+
             // クリックで漂い入力（Bobbing有効時のみ）
             if (isBobbing && !isFlyingAway && Input.GetMouseButtonDown(0))
                 DetectClick();

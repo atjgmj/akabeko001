@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace Akabeko
 {
@@ -96,9 +97,93 @@ namespace Akabeko
             transitionCoroutine = StartCoroutine(FadeTransitionCoroutine(ApplyResetScene));
         }
 
+        private ScanlinePostProcess scanlinePostProcess;
+        private Material monoLineMaterial;
+        private Dictionary<Renderer, Material> originalModelMaterials = new Dictionary<Renderer, Material>();
+
+        public Material GetMonoLineMaterial() => monoLineMaterial;
+
+        private void EnsureScanlinePostProcess()
+        {
+            if (scanlinePostProcess == null && Camera.main != null)
+            {
+                scanlinePostProcess = Camera.main.GetComponent<ScanlinePostProcess>();
+                if (scanlinePostProcess == null)
+                    scanlinePostProcess = Camera.main.gameObject.AddComponent<ScanlinePostProcess>();
+            }
+        }
+
+        private void ApplyMonoLineMaterial(bool active)
+        {
+            AkabekoController controller = FindFirstObjectByType<AkabekoController>();
+            if (controller == null) return;
+
+            Renderer[] renderers = controller.GetComponentsInChildren<Renderer>();
+            if (renderers == null || renderers.Length == 0) return;
+
+            // 初回にモデルの元マテリアルを保存
+            foreach (var r in renderers)
+            {
+                if (r != null && !originalModelMaterials.ContainsKey(r))
+                {
+                    originalModelMaterials[r] = r.sharedMaterial;
+                }
+            }
+
+            if (active)
+            {
+                if (monoLineMaterial == null)
+                {
+                    Texture2D scanlineTex = Resources.Load<Texture2D>("Textures/Tex_Scanline");
+                    if (scanlineTex == null)
+                    {
+                        scanlineTex = new Texture2D(1, 128, TextureFormat.RGBA32, false);
+                        scanlineTex.wrapMode = TextureWrapMode.Repeat;
+                        scanlineTex.filterMode = FilterMode.Point;
+                        for (int y = 0; y < 128; y++)
+                        {
+                            float val = (y % 8 < 4) ? 0.05f : 0.95f;
+                            scanlineTex.SetPixel(0, y, new Color(val, val, val, 1f));
+                        }
+                        scanlineTex.Apply();
+                    }
+
+                    Shader shader = Shader.Find("Standard") ?? Shader.Find("Mobile/Diffuse");
+                    monoLineMaterial = new Material(shader);
+                    monoLineMaterial.mainTexture = scanlineTex;
+                    monoLineMaterial.mainTextureScale = new Vector2(1f, 24f);
+
+                    if (monoLineMaterial.HasProperty("_BaseColor")) monoLineMaterial.SetColor("_BaseColor", Color.white);
+                    else if (monoLineMaterial.HasProperty("_Color")) monoLineMaterial.SetColor("_Color", Color.white);
+                    if (monoLineMaterial.HasProperty("_Glossiness")) monoLineMaterial.SetFloat("_Glossiness", 0.1f);
+                    if (monoLineMaterial.HasProperty("_Metallic")) monoLineMaterial.SetFloat("_Metallic", 0f);
+                }
+
+                foreach (var r in renderers)
+                {
+                    if (r != null && monoLineMaterial != null)
+                        r.sharedMaterial = monoLineMaterial;
+                }
+            }
+            else
+            {
+                foreach (var r in renderers)
+                {
+                    if (r != null && originalModelMaterials.TryGetValue(r, out Material origMat))
+                    {
+                        r.sharedMaterial = origMat;
+                    }
+                }
+            }
+        }
+
         private void ApplyResetScene()
         {
             ActiveStage = "default";
+            EnsureScanlinePostProcess();
+            if (scanlinePostProcess != null) scanlinePostProcess.isEffectActive = false;
+            ApplyMonoLineMaterial(false);
+
             ApplySettings(defaultLightColor, defaultFloorColor, 1.0f, defaultSkybox, defaultAmbientLight);
             OnStageChanged?.Invoke(ActiveStage);
             Debug.Log("[StageManager] Reset to Default stage.");
@@ -116,7 +201,16 @@ namespace Akabeko
         private void ApplyChangeScene(string sceneName)
         {
             ActiveStage = sceneName.ToLower();
-            switch (sceneName.ToLower())
+            EnsureScanlinePostProcess();
+
+            // スキャンラインポスプロエフェクトの切り替え
+            bool isMonoLine = ActiveStage == "monoline";
+            if (scanlinePostProcess != null)
+                scanlinePostProcess.isEffectActive = isMonoLine;
+
+            ApplyMonoLineMaterial(isMonoLine);
+
+            switch (ActiveStage)
             {
                 case "space": // 幽玄 (宇宙) - Purple スカイボックス
                     ApplySettings(
@@ -146,6 +240,21 @@ namespace Akabeko
                         volcanSkybox,
                         new Color(0.2f, 0.04f, 0.0f)
                     );
+                    break;
+
+                case "monoline": // 白黒スキャンライン線画（MEOW AIエージェント風アート）
+                    ApplySettings(
+                        new Color(0.9f, 0.9f, 0.9f),
+                        new Color(0.95f, 0.95f, 0.95f),
+                        1.4f,
+                        null,
+                        new Color(0.85f, 0.85f, 0.85f)
+                    );
+                    if (Camera.main != null)
+                    {
+                        Camera.main.clearFlags = CameraClearFlags.SolidColor;
+                        Camera.main.backgroundColor = new Color(0.95f, 0.95f, 0.95f);
+                    }
                     break;
 
                 default:
