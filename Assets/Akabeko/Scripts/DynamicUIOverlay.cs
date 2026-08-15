@@ -83,6 +83,57 @@ namespace Akabeko
             ShowRareAlert("Motion", motion.motionName);
         }
 
+        private Texture2D MakeNeumorphicPill(int w, int h, float radius)
+        {
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            var cols = new Color[w * h];
+            Color shadow = new Color(0f, 0f, 0f, 0.14f);      // 底部ソフトシャドウ
+            Color lightRim = new Color(1f, 1f, 1f, 0.95f);    // 上部ハイライトリム
+
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    float dist = 0f;
+                    bool corner = false;
+                    if (x < radius && y < radius) { dist = Vector2.Distance(new Vector2(x, y), new Vector2(radius, radius)); corner = true; }
+                    else if (x >= w - radius && y < radius) { dist = Vector2.Distance(new Vector2(x, y), new Vector2(w - radius, radius)); corner = true; }
+                    else if (x < radius && y >= h - radius) { dist = Vector2.Distance(new Vector2(x, y), new Vector2(radius, h - radius)); corner = true; }
+                    else if (x >= w - radius && y >= h - radius) { dist = Vector2.Distance(new Vector2(x, y), new Vector2(w - radius, h - radius)); corner = true; }
+
+                    if (corner && dist > radius)
+                    {
+                        cols[y * w + x] = Color.clear;
+                    }
+                    else if (corner && dist > radius - 1.5f)
+                    {
+                        cols[y * w + x] = (y < h * 0.5f) ? shadow : lightRim;
+                    }
+                    else if (y <= 1.5f)
+                    {
+                        cols[y * w + x] = shadow;
+                    }
+                    else if (y >= h - 2f)
+                    {
+                        cols[y * w + x] = lightRim;
+                    }
+                    else if (x <= 1.5f || x >= w - 2f)
+                    {
+                        cols[y * w + x] = new Color(0f, 0f, 0f, 0.06f);
+                    }
+                    else
+                    {
+                        // ニューモーフィズムの立体感を生むソフトな縦方向グラデーション
+                        float grad = (float)y / h;
+                        cols[y * w + x] = Color.Lerp(new Color(0.93f, 0.95f, 0.97f, 0.96f), new Color(0.99f, 0.99f, 1.0f, 0.98f), grad);
+                    }
+                }
+            }
+            tex.SetPixels(cols);
+            tex.Apply();
+            return tex;
+        }
+
         public static void ShowRareAlert(string category, string name)
         {
             if (instance == null) instance = FindFirstObjectByType<DynamicUIOverlay>();
@@ -101,7 +152,7 @@ namespace Akabeko
             rareAlertName = name;
             rareAlertTimer = RARE_ALERT_DURATION;
             rareAlertColor = GetAccentColor(category, name);
-            cachedPillTex = MakeRounded(260, 34, 17f, new Color(0.06f, 0.08f, 0.12f, 0.92f), rareAlertColor, 1.5f);
+            cachedPillTex = MakeNeumorphicPill(280, 40, 20f);
         }
 
         private Color GetAccentColor(string category, string name)
@@ -109,25 +160,25 @@ namespace Akabeko
             string lower = name.ToLower();
             if (category.Equals("Stage", System.StringComparison.OrdinalIgnoreCase))
             {
-                if (lower.Contains("space")) return new Color(0.68f, 0.38f, 0.98f);   // Purple
-                if (lower.Contains("sea")) return new Color(0.15f, 0.75f, 0.95f);     // Aqua Cyan
-                if (lower.Contains("volcano")) return new Color(1.00f, 0.40f, 0.10f); // Solar Orange
-                if (lower.Contains("monoline")) return new Color(0.92f, 0.92f, 0.92f); // Silver
+                if (lower.Contains("space")) return new Color(0.486f, 0.227f, 0.929f);   // Cosmic Violet
+                if (lower.Contains("sea")) return new Color(0.008f, 0.518f, 0.780f);     // Ocean Blue
+                if (lower.Contains("volcano")) return new Color(0.918f, 0.345f, 0.047f); // Ember Orange
+                if (lower.Contains("monoline")) return new Color(0.200f, 0.255f, 0.333f); // Charcoal
             }
             else if (category.Equals("Color", System.StringComparison.OrdinalIgnoreCase))
             {
-                if (lower.Contains("gold")) return new Color(1.0f, 0.82f, 0.18f);     // Gold
-                if (lower.Contains("silver")) return new Color(0.88f, 0.90f, 0.95f);   // Silver
-                if (lower.Contains("rainbow")) return new Color(0.95f, 0.30f, 0.78f);  // Magenta
+                if (lower.Contains("gold")) return new Color(0.851f, 0.467f, 0.024f);     // Amber Gold
+                if (lower.Contains("silver")) return new Color(0.278f, 0.333f, 0.412f);   // Platinum Steel
+                if (lower.Contains("rainbow")) return new Color(0.859f, 0.153f, 0.467f);  // Orchid Rose
             }
             else if (category.Equals("Action", System.StringComparison.OrdinalIgnoreCase))
             {
-                if (lower.Contains("supernova")) return new Color(1.0f, 0.70f, 0.15f);
-                if (lower.Contains("wormhole")) return new Color(0.50f, 0.45f, 1.00f);
-                if (lower.Contains("clone")) return new Color(0.20f, 0.85f, 0.50f);
-                if (lower.Contains("matrix")) return new Color(0.18f, 0.95f, 0.40f);
-                if (lower.Contains("disco")) return new Color(1.00f, 0.28f, 0.62f);
-                if (lower.Contains("tornado")) return new Color(0.28f, 0.72f, 1.00f);
+                if (lower.Contains("supernova")) return new Color(0.851f, 0.467f, 0.024f);
+                if (lower.Contains("wormhole")) return new Color(0.310f, 0.275f, 0.898f);
+                if (lower.Contains("clone")) return new Color(0.020f, 0.588f, 0.412f);
+                if (lower.Contains("matrix")) return new Color(0.086f, 0.639f, 0.290f);
+                if (lower.Contains("disco")) return new Color(0.882f, 0.114f, 0.282f);
+                if (lower.Contains("tornado")) return new Color(0.008f, 0.518f, 0.780f);
             }
             return new Color(0.82f, 0.10f, 0.10f); // Akabeko Red
         }
@@ -294,7 +345,7 @@ namespace Akabeko
             popupStyle.fontSize         = Mathf.RoundToInt(16 * scale);
             rareAlertStyle.fontSize     = Mathf.RoundToInt(14 * scale);
 
-            // --- 0. Top Rare Alert Pill (Modern Game HUD Style e.g. Stage : Space) ---
+            // --- 0. Bottom Rare Alert Pill (Neumorphic Soft White Style e.g. Stage : Space) ---
             if (rareAlertTimer > 0f)
             {
                 float elapsed = RARE_ALERT_DURATION - rareAlertTimer;
@@ -302,22 +353,25 @@ namespace Akabeko
                 float easeIn = 1f - Mathf.Pow(1f - inProgress, 3f);
                 float alpha = Mathf.Clamp01(rareAlertTimer / 0.5f);
 
-                float targetY = 16f * scale;
-                float startY = -45f * scale;
+                float targetY = sh - 58f * scale;
+                float startY = sh + 45f * scale;
                 float curAlertY = Mathf.Lerp(startY, targetY, easeIn);
 
                 string alertText = $"✦  {rareAlertCategory.ToUpper()} : {rareAlertName}  ✦";
-                float alertW = Mathf.Max(240f * scale, alertText.Length * 11.5f * scale + 30f * scale);
-                float alertH = 34f * scale;
+                float alertW = Mathf.Max(260f * scale, alertText.Length * 12f * scale + 36f * scale);
+                float alertH = 38f * scale;
                 float alertX = (sw - alertW) * 0.5f;
 
                 Color prevColor = GUI.color;
                 GUI.color = new Color(1f, 1f, 1f, alpha);
 
                 if (cachedPillTex == null)
-                    cachedPillTex = MakeRounded(260, 34, 17f, new Color(0.06f, 0.08f, 0.12f, 0.92f), rareAlertColor, 1.5f);
+                    cachedPillTex = MakeNeumorphicPill(280, 40, 20f);
 
                 GUI.DrawTexture(new Rect(alertX, curAlertY, alertW, alertH), cachedPillTex);
+
+                rareAlertStyle.fontSize = Mathf.RoundToInt(15 * scale);
+                rareAlertStyle.normal.textColor = rareAlertColor;
                 GUI.Label(new Rect(alertX, curAlertY, alertW, alertH), alertText, rareAlertStyle);
 
                 GUI.color = prevColor;
