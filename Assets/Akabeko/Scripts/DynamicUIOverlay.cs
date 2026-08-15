@@ -1,15 +1,17 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace Akabeko
 {
     /// <summary>
-    /// Clean card-style UI: AKABEKO title + red line + zero-padded counter + hidden menu controls
+    /// Clean card-style UI + Admin Config Panel matching Wireframe Images 1 & 2
     /// </summary>
     public class DynamicUIOverlay : MonoBehaviour
     {
         private RareMotionSystem rareMotionSystem;
         private StageManager stageManager;
         private StageActionConfig actionConfig;
+        private StageActionController stageActionController;
         private ScreenshotManager screenshotManager;
         private ShareManager shareManager;
 
@@ -18,16 +20,17 @@ namespace Akabeko
         private float notificationTimer = 0f;
 
         private string activeColor = "Normal";
-        private string activeStage = "Default";
+        private string selectedViewStage = "Default"; // 画像2のように選択中のステージに応じたActionテーブル切り替え
         private bool showControls = false;
-        private bool showActionConfig = false; // ACTION行の確率テーブルを展開表示するトグル
 
         private GUIStyle titleStyle;
         private GUIStyle countStyle;
         private GUIStyle menuButtonStyle;
-        private GUIStyle controlButtonStyle;
-        private GUIStyle controlActiveStyle;
-        private GUIStyle controlPanelStyle;
+        private GUIStyle headerBoxStyle;
+        private GUIStyle itemBoxStyle;
+        private GUIStyle activeItemBoxStyle;
+        private GUIStyle percentStyle;
+        private GUIStyle saveButtonStyle;
         private GUIStyle popupStyle;
         private GUIStyle labelStyle;
         private bool stylesInitialized = false;
@@ -37,8 +40,15 @@ namespace Akabeko
             rareMotionSystem = FindFirstObjectByType<RareMotionSystem>();
             stageManager = FindFirstObjectByType<StageManager>();
             actionConfig = FindFirstObjectByType<StageActionConfig>();
+            stageActionController = FindFirstObjectByType<StageActionController>();
             screenshotManager = FindFirstObjectByType<ScreenshotManager>();
             shareManager = FindFirstObjectByType<ShareManager>();
+        }
+
+        private void Start()
+        {
+            if (actionConfig == null) actionConfig = StageActionConfig.Instance ?? FindFirstObjectByType<StageActionConfig>();
+            if (stageActionController == null) stageActionController = FindFirstObjectByType<StageActionController>();
         }
 
         private void OnEnable()
@@ -111,11 +121,10 @@ namespace Akabeko
         {
             if (stylesInitialized) return;
 
-            Color red      = new Color(0.82f, 0.10f, 0.10f, 1f);
-            Color darkGray = new Color(0.20f, 0.20f, 0.20f, 1f);
-            Color panelBg  = new Color(0.15f, 0.15f, 0.15f, 0.90f);
-            Color activeBg = new Color(0.82f, 0.10f, 0.10f, 0.95f);
-            Color btnBg    = new Color(0.25f, 0.25f, 0.25f, 0.90f);
+            Color red        = new Color(0.82f, 0.10f, 0.10f, 1f);
+            Color tealBg     = new Color(0.10f, 0.35f, 0.48f, 1.0f); // 画像通りのTeal色
+            Color darkGray   = new Color(0.20f, 0.20f, 0.20f, 1f);
+            Color highlight  = new Color(0.85f, 0.15f, 0.15f, 1f); // 赤枠ハイライト
 
             titleStyle = new GUIStyle(GUI.skin.label)
             {
@@ -141,24 +150,42 @@ namespace Akabeko
             menuButtonStyle.active.background  = MakeTex(2, 2, new Color(0f, 0f, 0f, 0.15f));
             menuButtonStyle.normal.textColor   = darkGray;
 
-            controlPanelStyle = new GUIStyle(GUI.skin.box);
-            controlPanelStyle.normal.background = MakeRounded(200, 80, 12f, panelBg, new Color(0.4f, 0.4f, 0.4f, 0.5f), 1f);
-            controlPanelStyle.border = new RectOffset(12, 12, 12, 12);
-
-            controlButtonStyle = new GUIStyle(GUI.skin.button)
+            headerBoxStyle = new GUIStyle(GUI.skin.box)
             {
-                fontStyle = FontStyle.Bold,
+                fontStyle = FontStyle.Normal,
                 alignment = TextAnchor.MiddleCenter,
             };
-            controlButtonStyle.normal.background = MakeRounded(100, 36, 8f, btnBg, new Color(0.5f, 0.5f, 0.5f, 0.4f), 1f);
-            controlButtonStyle.hover.background  = MakeRounded(100, 36, 8f, new Color(0.35f, 0.35f, 0.35f, 0.95f), new Color(0.6f, 0.6f, 0.6f, 0.6f), 1f);
-            controlButtonStyle.border = new RectOffset(8, 8, 8, 8);
-            controlButtonStyle.margin = new RectOffset(3, 3, 3, 3);
-            controlButtonStyle.normal.textColor = Color.white;
+            headerBoxStyle.normal.background = MakeTex(2, 2, tealBg);
+            headerBoxStyle.normal.textColor = Color.white;
 
-            controlActiveStyle = new GUIStyle(controlButtonStyle);
-            controlActiveStyle.normal.background = MakeRounded(100, 36, 8f, activeBg, new Color(1f, 0.6f, 0.6f, 0.7f), 1.5f);
-            controlActiveStyle.normal.textColor  = Color.white;
+            itemBoxStyle = new GUIStyle(GUI.skin.button)
+            {
+                fontStyle = FontStyle.Normal,
+                alignment = TextAnchor.MiddleCenter,
+            };
+            itemBoxStyle.normal.background = MakeTex(2, 2, tealBg);
+            itemBoxStyle.hover.background  = MakeTex(2, 2, new Color(0.15f, 0.45f, 0.60f));
+            itemBoxStyle.normal.textColor = Color.white;
+
+            activeItemBoxStyle = new GUIStyle(itemBoxStyle);
+            activeItemBoxStyle.normal.background = MakeRounded(100, 36, 4f, tealBg, highlight, 2.5f);
+            activeItemBoxStyle.normal.textColor = Color.white;
+
+            percentStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontStyle = FontStyle.Normal,
+                alignment = TextAnchor.MiddleLeft,
+            };
+            percentStyle.normal.textColor = Color.black;
+
+            saveButtonStyle = new GUIStyle(GUI.skin.button)
+            {
+                fontStyle = FontStyle.Normal,
+                alignment = TextAnchor.MiddleCenter,
+            };
+            saveButtonStyle.normal.background = MakeTex(2, 2, tealBg);
+            saveButtonStyle.hover.background  = MakeTex(2, 2, new Color(0.15f, 0.45f, 0.60f));
+            saveButtonStyle.normal.textColor = Color.white;
 
             popupStyle = new GUIStyle(GUI.skin.box)
             {
@@ -173,7 +200,7 @@ namespace Akabeko
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleLeft,
             };
-            labelStyle.normal.textColor = new Color(0.75f, 0.75f, 0.75f);
+            labelStyle.normal.textColor = new Color(0.2f, 0.2f, 0.2f);
 
             stylesInitialized = true;
         }
@@ -186,13 +213,15 @@ namespace Akabeko
             float sh = Screen.height;
             float scale = Mathf.Clamp(sw / 1280f, 0.6f, 1.4f);
 
-            titleStyle.fontSize   = Mathf.RoundToInt(44 * scale);
-            countStyle.fontSize   = Mathf.RoundToInt(36 * scale);
-            menuButtonStyle.fontSize = Mathf.RoundToInt(22 * scale);
-            labelStyle.fontSize   = Mathf.RoundToInt(12 * scale);
-            controlButtonStyle.fontSize = Mathf.RoundToInt(13 * scale);
-            controlActiveStyle.fontSize = Mathf.RoundToInt(13 * scale);
-            popupStyle.fontSize   = Mathf.RoundToInt(16 * scale);
+            titleStyle.fontSize         = Mathf.RoundToInt(44 * scale);
+            countStyle.fontSize         = Mathf.RoundToInt(36 * scale);
+            menuButtonStyle.fontSize    = Mathf.RoundToInt(22 * scale);
+            headerBoxStyle.fontSize     = Mathf.RoundToInt(18 * scale);
+            itemBoxStyle.fontSize       = Mathf.RoundToInt(16 * scale);
+            activeItemBoxStyle.fontSize = Mathf.RoundToInt(16 * scale);
+            percentStyle.fontSize       = Mathf.RoundToInt(14 * scale);
+            saveButtonStyle.fontSize    = Mathf.RoundToInt(18 * scale);
+            popupStyle.fontSize         = Mathf.RoundToInt(16 * scale);
 
             // --- 1. Title: AKABEKO ---
             float headerTop = 24f * scale;
@@ -235,109 +264,185 @@ namespace Akabeko
                            showControls ? "X" : "=", menuButtonStyle))
                 showControls = !showControls;
 
-            // --- 7. Control panel (hidden by default) ---
+            // --- 7. Admin Config Overlay (Matching Images 1 & 2) ---
             if (!showControls) return;
 
-            float panelW = 500f * scale;
-            float panelH = 142f * scale;  // 3行分 (COLOR + STAGE + ACTION)
-            float panelX = (sw - panelW) * 0.5f;
-            float panelY = sh - panelH - 16f * scale;
+            DrawAdminConfigUI(sw, sh, scale);
+        }
 
-            GUI.Box(new Rect(panelX, panelY, panelW, panelH), "", controlPanelStyle);
-
-            GUILayout.BeginArea(new Rect(panelX + 10f * scale, panelY + 8f * scale,
-                                         panelW - 20f * scale, panelH - 16f * scale));
-
-            float rowH = 32f * scale;
-
-            // Color row
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("COLOR", labelStyle, GUILayout.Width(50f * scale), GUILayout.Height(rowH));
-            if (GUILayout.Button("Normal",  activeColor == "Normal"  ? controlActiveStyle : controlButtonStyle, GUILayout.Height(rowH))) TriggerColor("Normal");
-            if (GUILayout.Button("Gold",    activeColor == "Gold"    ? controlActiveStyle : controlButtonStyle, GUILayout.Height(rowH))) TriggerColor("Gold");
-            if (GUILayout.Button("Silver",  activeColor == "Silver"  ? controlActiveStyle : controlButtonStyle, GUILayout.Height(rowH))) TriggerColor("Silver");
-            if (GUILayout.Button("Rainbow", activeColor == "Rainbow" ? controlActiveStyle : controlButtonStyle, GUILayout.Height(rowH))) TriggerColor("Rainbow");
-            GUILayout.EndHorizontal();
-
-            // Stage row
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("STAGE", labelStyle, GUILayout.Width(50f * scale), GUILayout.Height(rowH));
-            if (GUILayout.Button("Default", activeStage == "Default"  ? controlActiveStyle : controlButtonStyle, GUILayout.Height(rowH))) { stageManager?.ResetScene(); activeStage = "Default"; ShowNotification("Default"); }
-            if (GUILayout.Button("Space",   activeStage == "Space"    ? controlActiveStyle : controlButtonStyle, GUILayout.Height(rowH))) { stageManager?.ChangeScene("space"); activeStage = "Space"; ShowNotification("Space"); }
-            if (GUILayout.Button("Sea",     activeStage == "Sea"      ? controlActiveStyle : controlButtonStyle, GUILayout.Height(rowH))) { stageManager?.ChangeScene("sea"); activeStage = "Sea"; ShowNotification("Sea"); }
-            if (GUILayout.Button("Volcano", activeStage == "Volcano"  ? controlActiveStyle : controlButtonStyle, GUILayout.Height(rowH))) { stageManager?.ChangeScene("volcano"); activeStage = "Volcano"; ShowNotification("Volcano"); }
-            GUILayout.EndHorizontal();
-
-            // Action row (確率テーブル)
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("ACTION", labelStyle, GUILayout.Width(50f * scale), GUILayout.Height(rowH));
-            if (GUILayout.Button(showActionConfig ? "▲ Close" : "▼ Config", controlButtonStyle, GUILayout.Height(rowH)))
-                showActionConfig = !showActionConfig;
-            GUILayout.EndHorizontal();
-
-            GUILayout.EndArea();
-
-            // --- Action Config サブパネル ---
-            if (showActionConfig && actionConfig != null)
-            {
-                DrawActionConfigPanel(sw, sh, scale, panelX, panelY);
-            }
-
-        } // end OnGUI
+        private Vector2 actionScrollPos = Vector2.zero;
 
         /// <summary>
-        /// アクション確率テーブルを表示・編集するサブパネル
-        /// ステージ列 × アクション行のマトリクスをスライダーで表示する
+        /// ユーザーから提示された設計画像（1枚目・2枚目）を完全再現するアドミンパネルUI
         /// </summary>
-        private void DrawActionConfigPanel(float sw, float sh, float scale, float mainPanelX, float mainPanelY)
+        private void DrawAdminConfigUI(float sw, float sh, float scale)
         {
-            var entries = actionConfig.GetAllEntries();
-            int cols = entries.Count + 1; // ラベル列 + ステージ数
-            AkabekoAction[] actions = (AkabekoAction[])System.Enum.GetValues(typeof(AkabekoAction));
-            int rows = actions.Length + 1; // ヘッダー行 + アクション数
+            if (actionConfig == null) actionConfig = StageActionConfig.Instance ?? FindFirstObjectByType<StageActionConfig>();
+            if (actionConfig == null) return;
 
-            float cellW = 90f * scale;
-            float labelW = 80f * scale;
-            float cellH = 28f * scale;
-            float subW = labelW + cellW * entries.Count + 20f * scale;
-            float subH = cellH * rows + 20f * scale;
+            // 背景カード領域
+            float panelW = Mathf.Min(1150f * scale, sw - 40f);
+            float panelH = 520f * scale;
+            float panelX = (sw - panelW) * 0.5f;
+            float panelY = (sh - panelH) * 0.5f + 30f * scale;
 
-            // メインパネルの上に表示
-            float subX = (sw - subW) * 0.5f;
-            float subY = mainPanelY - subH - 8f * scale;
+            // 全体背景（ホワイト/ライトグレーカード風）
+            GUI.Box(new Rect(panelX, panelY, panelW, panelH), "", GUI.skin.window);
 
-            GUI.Box(new Rect(subX, subY, subW, subH), "", controlPanelStyle);
+            float curY = panelY + 20f * scale;
+            float startX = panelX + 25f * scale;
+            float headerW = 120f * scale;
+            float itemW   = 120f * scale;
+            float itemH   = 40f * scale;
+            float gapX    = 20f * scale;
+            float rowGapY = 90f * scale;
 
-            float cx = subX + 10f * scale;
-            float cy = subY + 8f * scale;
+            // ================= 1. Color Row =================
+            GUI.Box(new Rect(startX, curY, headerW, itemH), "Color", headerBoxStyle);
 
-            // ヘッダー行 (ステージ名)
-            GUI.Label(new Rect(cx, cy, labelW, cellH), "", labelStyle);
-            for (int i = 0; i < entries.Count; i++)
+            var colors = actionConfig.GetAllColors();
+            for (int i = 0; i < colors.Count; i++)
             {
-                GUI.Label(new Rect(cx + labelW + cellW * i, cy, cellW, cellH),
-                          entries[i].stageName.ToUpper(), labelStyle);
-            }
-            cy += cellH;
+                var colEntry = colors[i];
+                float x = startX + headerW + gapX + i * (itemW + gapX);
+                bool isActive = activeColor.Equals(colEntry.colorName, System.StringComparison.OrdinalIgnoreCase);
 
-            // アクション行
-            foreach (AkabekoAction action in actions)
-            {
-                GUI.Label(new Rect(cx, cy, labelW, cellH), action.ToString(), labelStyle);
-                for (int i = 0; i < entries.Count; i++)
+                if (GUI.Button(new Rect(x, curY, itemW, itemH), colEntry.colorName, isActive ? activeItemBoxStyle : itemBoxStyle))
                 {
-                    float current = entries[i].GetProbability(action);
-                    float newVal = GUI.HorizontalSlider(
-                        new Rect(cx + labelW + cellW * i, cy + 4f * scale, cellW - 8f * scale, cellH - 8f * scale),
-                        current, 0f, 1f);
-                    if (!Mathf.Approximately(newVal, current))
-                        entries[i].SetProbability(action, newVal);
-
-                    // 確率値ラベル
-                    GUI.Label(new Rect(cx + labelW + cellW * i, cy, cellW - 4f * scale, cellH),
-                              (newVal * 100f).ToString("F0") + "%", labelStyle);
+                    activeColor = colEntry.colorName;
+                    if (stageActionController != null) stageActionController.ForceSetColor(colEntry.colorName, 30);
+                    else if (rareMotionSystem != null) rareMotionSystem.SetColorByName(colEntry.colorName);
+                    ShowNotification($"Test Color: {colEntry.colorName}");
                 }
-                cy += cellH;
+
+                float pct = colEntry.probability * 100f;
+                Rect sliderRect = new Rect(x, curY + itemH + 6f * scale, itemW - 40f * scale, 22f * scale);
+                float newPct = GUI.HorizontalSlider(sliderRect, pct, 0f, 100f);
+                if (!Mathf.Approximately(newPct, pct))
+                {
+                    actionConfig.SetColorProbability(colEntry.colorName, newPct / 100f);
+                }
+
+                Rect labelRect = new Rect(x + itemW - 36f * scale, curY + itemH + 4f * scale, 40f * scale, 24f * scale);
+                GUI.Label(labelRect, $"{Mathf.RoundToInt(newPct)}%", percentStyle);
+            }
+
+            curY += rowGapY;
+
+            // ================= 2. Stage Row =================
+            GUI.Box(new Rect(startX, curY, headerW, itemH), "Stage", headerBoxStyle);
+
+            var stageProbs = actionConfig.GetAllStageProbabilities();
+            for (int i = 0; i < stageProbs.Count; i++)
+            {
+                var stgEntry = stageProbs[i];
+                float x = startX + headerW + gapX + i * (itemW + gapX);
+                bool isSelectedStage = selectedViewStage.Equals(stgEntry.stageName, System.StringComparison.OrdinalIgnoreCase);
+
+                if (GUI.Button(new Rect(x, curY, itemW, itemH), stgEntry.stageName, isSelectedStage ? activeItemBoxStyle : itemBoxStyle))
+                {
+                    selectedViewStage = stgEntry.stageName;
+                    if (stageActionController != null) stageActionController.ForceSetStage(stgEntry.stageName, 30);
+                    else if (stageManager != null) stageManager.ChangeScene(stgEntry.stageName.ToLower());
+                    ShowNotification($"Selected Stage: {stgEntry.stageName}");
+                }
+
+                float pct = stgEntry.probability * 100f;
+                Rect sliderRect = new Rect(x, curY + itemH + 6f * scale, itemW - 40f * scale, 22f * scale);
+                float newPct = GUI.HorizontalSlider(sliderRect, pct, 0f, 100f);
+                if (!Mathf.Approximately(newPct, pct))
+                {
+                    actionConfig.SetStageProbability(stgEntry.stageName, newPct / 100f);
+                }
+
+                Rect labelRect = new Rect(x + itemW - 36f * scale, curY + itemH + 4f * scale, 40f * scale, 24f * scale);
+                GUI.Label(labelRect, $"{Mathf.RoundToInt(newPct)}%", percentStyle);
+            }
+
+            curY += rowGapY;
+
+            // ================= 3. Action Row (All 12 Actions with ScrollView) =================
+            GUI.Box(new Rect(startX, curY, headerW, itemH), "Action", headerBoxStyle);
+
+            AkabekoAction[] actions = (AkabekoAction[])System.Enum.GetValues(typeof(AkabekoAction));
+            List<AkabekoAction> activeActionList = new List<AkabekoAction>();
+            foreach (var a in actions)
+            {
+                if (a != AkabekoAction.Sound) activeActionList.Add(a);
+            }
+
+            float scrollAreaW = panelW - headerW - gapX - 45f * scale;
+            float totalActionContentW = activeActionList.Count * (itemW + gapX);
+
+            Rect viewRect = new Rect(startX + headerW + gapX, curY, scrollAreaW, itemH + 42f * scale);
+            Rect contentRect = new Rect(0, 0, totalActionContentW, itemH + 28f * scale);
+
+            actionScrollPos = GUI.BeginScrollView(viewRect, actionScrollPos, contentRect, true, false);
+
+            for (int i = 0; i < activeActionList.Count; i++)
+            {
+                AkabekoAction act = activeActionList[i];
+                string actDisplayName = act switch
+                {
+                    AkabekoAction.None         => "None",
+                    AkabekoAction.Bobbing      => "Bubble",
+                    AkabekoAction.FlyAway     => "flyaway",
+                    AkabekoAction.Spin        => "Spin",
+                    AkabekoAction.Shake       => "Shake",
+                    AkabekoAction.ScalePulse  => "SquashBounce",
+                    AkabekoAction.SuperNova    => "SuperNova",
+                    AkabekoAction.Wormhole     => "Wormhole",
+                    AkabekoAction.Clones       => "Clones",
+                    AkabekoAction.MatrixGlitch => "MatrixGlitch",
+                    AkabekoAction.DiscoParty   => "DiscoParty",
+                    AkabekoAction.Tornado      => "Tornado",
+                    _                         => act.ToString()
+                };
+
+                float x = i * (itemW + gapX);
+
+                float currentProb = actionConfig.GetProbability(selectedViewStage, act);
+                bool isHighlighted = (currentProb > 0.04f && act != AkabekoAction.None);
+
+                if (GUI.Button(new Rect(x, 0, itemW, itemH), actDisplayName, isHighlighted ? activeItemBoxStyle : itemBoxStyle))
+                {
+                    if (stageActionController != null) stageActionController.ForceTriggerAction(act);
+                    ShowNotification($"Test Action: {actDisplayName}");
+                }
+
+                float pct = currentProb * 100f;
+                Rect sliderRect = new Rect(x, itemH + 6f * scale, itemW - 40f * scale, 22f * scale);
+                float newPct = GUI.HorizontalSlider(sliderRect, pct, 0f, 100f);
+                if (!Mathf.Approximately(newPct, pct))
+                {
+                    actionConfig.SetProbability(selectedViewStage, act, newPct / 100f);
+                }
+
+                Rect labelRect = new Rect(x + itemW - 36f * scale, itemH + 4f * scale, 40f * scale, 24f * scale);
+                GUI.Label(labelRect, $"{Mathf.RoundToInt(newPct)}%", percentStyle);
+            }
+
+            GUI.EndScrollView();
+
+            curY += rowGapY + 25f * scale;
+
+            // ================= 4. Save & Reset Bottom Bar =================
+            float saveW = 160f * scale;
+            float saveH = 44f * scale;
+            float saveX = (sw - saveW) * 0.5f;
+
+            if (GUI.Button(new Rect(saveX, curY, saveW, saveH), "Save", saveButtonStyle))
+            {
+                actionConfig.SaveConfig();
+                ShowNotification("★ Config Saved! ★");
+            }
+
+            float resetW = 120f * scale;
+            float resetX = panelX + panelW - resetW - 25f * scale;
+            if (GUI.Button(new Rect(resetX, curY + 6f * scale, resetW, 32f * scale), "Reset Defaults", itemBoxStyle))
+            {
+                actionConfig.ResetToDefaults();
+                ShowNotification("Config Reset");
             }
         }
 
@@ -366,3 +471,4 @@ namespace Akabeko
         }
     }
 }
+

@@ -108,7 +108,7 @@ namespace Akabeko
             }
         }
 
-        private void ResetColor()
+        public void ResetColor()
         {
             isRainbowActive = false;
             foreach (var kvp in defaultMaterials)
@@ -119,6 +119,32 @@ namespace Akabeko
                 }
             }
             Debug.Log("[RareMotionSystem] Colors reset to default.");
+        }
+
+        /// <summary>
+        /// カラー名（Normal / Gold / Silver / Rainbow）を指定して適用する
+        /// </summary>
+        public void SetColorByName(string colorName)
+        {
+            if (string.IsNullOrEmpty(colorName) || colorName.Equals("Normal", StringComparison.OrdinalIgnoreCase))
+            {
+                ResetColor();
+                return;
+            }
+
+            string matName = "Mat_" + char.ToUpper(colorName[0]) + colorName.Substring(1).ToLower();
+            if (colorName.Equals("Gold", StringComparison.OrdinalIgnoreCase)) matName = "Mat_Gold";
+            else if (colorName.Equals("Silver", StringComparison.OrdinalIgnoreCase)) matName = "Mat_Silver";
+            else if (colorName.Equals("Rainbow", StringComparison.OrdinalIgnoreCase)) matName = "Mat_Rainbow";
+
+            RareMotionData data = new RareMotionData
+            {
+                motionId = "color_" + colorName.ToLower(),
+                motionName = colorName,
+                type = MotionType.COLOR_CHANGE,
+                materialName = matName
+            };
+            ExecuteMotion(data);
         }
 
         /// <summary>
