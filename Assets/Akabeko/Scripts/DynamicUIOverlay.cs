@@ -29,6 +29,7 @@ namespace Akabeko
         private const float RARE_ALERT_DURATION = 3.5f;
         private Color rareAlertColor = new Color(0.85f, 0.85f, 0.95f);
         private GUIStyle rareAlertStyle;
+        private Texture2D cachedPillTex;
 
         private string activeColor = "Normal";
         private string selectedViewStage = "Default"; // 画像2のように選択中のステージに応じたActionテーブル切り替え
