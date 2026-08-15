@@ -303,6 +303,7 @@ namespace Akabeko
                 {
                     r.material = newMat;
                 }
+                DynamicUIOverlay.ShowRareAlert("Color", motion.motionName);
                 Debug.Log($"[RareMotionSystem] Material changed to: {motion.materialName}");
             }
             else
@@ -351,6 +352,7 @@ namespace Akabeko
                     {
                         r.material = dynamicMaterial;
                     }
+                    DynamicUIOverlay.ShowRareAlert("Color", motion.motionName);
                     Debug.Log($"[RareMotionSystem] Dynamic material applied for: {motion.materialName}");
                 }
             }

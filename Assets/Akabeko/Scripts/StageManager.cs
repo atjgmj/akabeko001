@@ -262,6 +262,11 @@ namespace Akabeko
                     break;
             }
             OnStageChanged?.Invoke(ActiveStage);
+            if (ActiveStage != "default")
+            {
+                string displayStage = char.ToUpper(ActiveStage[0]) + ActiveStage.Substring(1);
+                DynamicUIOverlay.ShowRareAlert("Stage", displayStage);
+            }
             Debug.Log($"[StageManager] Scene changed to: {sceneName}");
         }
 

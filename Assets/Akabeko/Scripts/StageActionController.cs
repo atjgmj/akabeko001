@@ -339,16 +339,16 @@ namespace Akabeko
             float roll = Random.value * totalWeight;
 
             if (roll < pNone) return; roll -= pNone;
-            if (roll < pFlyAway) { if (!isFlyingAway) StartCoroutine(FlyAwayCoroutine()); return; } roll -= pFlyAway;
-            if (roll < pSpin) { if (!isSpinning) StartCoroutine(SpinCoroutine()); return; } roll -= pSpin;
-            if (roll < pShake) { if (!isShaking) StartCoroutine(ShakeCoroutine()); return; } roll -= pShake;
-            if (roll < pScalePulse) { if (!isScalePulsing) StartCoroutine(ScalePulseCoroutine()); return; } roll -= pScalePulse;
-            if (roll < pSuperNova) { if (!isSuperNova) StartCoroutine(SuperNovaCoroutine()); return; } roll -= pSuperNova;
-            if (roll < pWormhole) { if (!isWormhole) StartCoroutine(WormholeCoroutine()); return; } roll -= pWormhole;
-            if (roll < pClones) { if (!isClones) StartCoroutine(ClonesCoroutine()); return; } roll -= pClones;
-            if (roll < pMatrixGlitch) { if (!isMatrixGlitch) StartCoroutine(MatrixGlitchCoroutine()); return; } roll -= pMatrixGlitch;
-            if (roll < pDiscoParty) { if (!isDiscoParty) StartCoroutine(DiscoPartyCoroutine()); return; } roll -= pDiscoParty;
-            if (roll < pTornado) { if (!isTornado) StartCoroutine(TornadoCoroutine()); return; }
+            if (roll < pFlyAway) { ExecuteAction(AkabekoAction.FlyAway); return; } roll -= pFlyAway;
+            if (roll < pSpin) { ExecuteAction(AkabekoAction.Spin); return; } roll -= pSpin;
+            if (roll < pShake) { ExecuteAction(AkabekoAction.Shake); return; } roll -= pShake;
+            if (roll < pScalePulse) { ExecuteAction(AkabekoAction.ScalePulse); return; } roll -= pScalePulse;
+            if (roll < pSuperNova) { ExecuteAction(AkabekoAction.SuperNova); return; } roll -= pSuperNova;
+            if (roll < pWormhole) { ExecuteAction(AkabekoAction.Wormhole); return; } roll -= pWormhole;
+            if (roll < pClones) { ExecuteAction(AkabekoAction.Clones); return; } roll -= pClones;
+            if (roll < pMatrixGlitch) { ExecuteAction(AkabekoAction.MatrixGlitch); return; } roll -= pMatrixGlitch;
+            if (roll < pDiscoParty) { ExecuteAction(AkabekoAction.DiscoParty); return; } roll -= pDiscoParty;
+            if (roll < pTornado) { ExecuteAction(AkabekoAction.Tornado); return; }
         }
 
         // ---- アドミン/テスト用パブリックメソッド ----
@@ -376,20 +376,25 @@ namespace Akabeko
 
         public void ForceTriggerAction(AkabekoAction action)
         {
+            ExecuteAction(action);
+            Debug.Log($"[StageActionController] Force triggered action: {action}");
+        }
+
+        private void ExecuteAction(AkabekoAction action)
+        {
             switch (action)
             {
-                case AkabekoAction.FlyAway:      if (!isFlyingAway) StartCoroutine(FlyAwayCoroutine()); break;
-                case AkabekoAction.Spin:         if (!isSpinning) StartCoroutine(SpinCoroutine()); break;
-                case AkabekoAction.Shake:        if (!isShaking) StartCoroutine(ShakeCoroutine()); break;
-                case AkabekoAction.ScalePulse:   if (!isScalePulsing) StartCoroutine(ScalePulseCoroutine()); break;
-                case AkabekoAction.SuperNova:    if (!isSuperNova) StartCoroutine(SuperNovaCoroutine()); break;
-                case AkabekoAction.Wormhole:     if (!isWormhole) StartCoroutine(WormholeCoroutine()); break;
-                case AkabekoAction.Clones:       if (!isClones) StartCoroutine(ClonesCoroutine()); break;
-                case AkabekoAction.MatrixGlitch: if (!isMatrixGlitch) StartCoroutine(MatrixGlitchCoroutine()); break;
-                case AkabekoAction.DiscoParty:   if (!isDiscoParty) StartCoroutine(DiscoPartyCoroutine()); break;
-                case AkabekoAction.Tornado:      if (!isTornado) StartCoroutine(TornadoCoroutine()); break;
+                case AkabekoAction.FlyAway:      if (!isFlyingAway) { DynamicUIOverlay.ShowRareAlert("Action", "FlyAway"); StartCoroutine(FlyAwayCoroutine()); } break;
+                case AkabekoAction.Spin:         if (!isSpinning) { DynamicUIOverlay.ShowRareAlert("Action", "Spin"); StartCoroutine(SpinCoroutine()); } break;
+                case AkabekoAction.Shake:        if (!isShaking) { DynamicUIOverlay.ShowRareAlert("Action", "Shake"); StartCoroutine(ShakeCoroutine()); } break;
+                case AkabekoAction.ScalePulse:   if (!isScalePulsing) { DynamicUIOverlay.ShowRareAlert("Action", "SquashBounce"); StartCoroutine(ScalePulseCoroutine()); } break;
+                case AkabekoAction.SuperNova:    if (!isSuperNova) { DynamicUIOverlay.ShowRareAlert("Action", "SuperNova"); StartCoroutine(SuperNovaCoroutine()); } break;
+                case AkabekoAction.Wormhole:     if (!isWormhole) { DynamicUIOverlay.ShowRareAlert("Action", "Wormhole"); StartCoroutine(WormholeCoroutine()); } break;
+                case AkabekoAction.Clones:       if (!isClones) { DynamicUIOverlay.ShowRareAlert("Action", "Clones"); StartCoroutine(ClonesCoroutine()); } break;
+                case AkabekoAction.MatrixGlitch: if (!isMatrixGlitch) { DynamicUIOverlay.ShowRareAlert("Action", "MatrixGlitch"); StartCoroutine(MatrixGlitchCoroutine()); } break;
+                case AkabekoAction.DiscoParty:   if (!isDiscoParty) { DynamicUIOverlay.ShowRareAlert("Action", "DiscoParty"); StartCoroutine(DiscoPartyCoroutine()); } break;
+                case AkabekoAction.Tornado:      if (!isTornado) { DynamicUIOverlay.ShowRareAlert("Action", "Tornado"); StartCoroutine(TornadoCoroutine()); } break;
             }
-            Debug.Log($"[StageActionController] Force triggered action: {action}");
         }
 
         /// <summary>1. 超新星爆発（SuperNova）: 光の溜め＋カメラズーム＋衝撃波爆発</summary>

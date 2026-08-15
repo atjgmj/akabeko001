@@ -15,9 +15,20 @@ namespace Akabeko
         private ScreenshotManager screenshotManager;
         private ShareManager shareManager;
 
+        private static DynamicUIOverlay instance;
+        public static DynamicUIOverlay Instance => instance;
+
         private int swipeCount = 0;
         private string notificationMessage = "";
         private float notificationTimer = 0f;
+
+        // Modern Sleek Rare Alert Pill
+        private string rareAlertCategory = "";
+        private string rareAlertName = "";
+        private float rareAlertTimer = 0f;
+        private const float RARE_ALERT_DURATION = 3.5f;
+        private Color rareAlertColor = new Color(0.85f, 0.85f, 0.95f);
+        private GUIStyle rareAlertStyle;
 
         private string activeColor = "Normal";
         private string selectedViewStage = "Default"; // 画像2のように選択中のステージに応じたActionテーブル切り替え
@@ -37,6 +48,7 @@ namespace Akabeko
 
         private void Awake()
         {
+            instance = this;
             rareMotionSystem = FindFirstObjectByType<RareMotionSystem>();
             stageManager = FindFirstObjectByType<StageManager>();
             actionConfig = FindFirstObjectByType<StageActionConfig>();
@@ -67,18 +79,66 @@ namespace Akabeko
 
         private void HandleRareMotionTriggered(RareMotionData motion)
         {
-            ShowNotification("* " + motion.motionName + " *");
+            ShowRareAlert("Motion", motion.motionName);
+        }
+
+        public static void ShowRareAlert(string category, string name)
+        {
+            if (instance != null)
+            {
+                instance.TriggerRareAlert(category, name);
+            }
+        }
+
+        public void TriggerRareAlert(string category, string name)
+        {
+            if (string.IsNullOrEmpty(name) || name.Equals("Default", System.StringComparison.OrdinalIgnoreCase) || name.Equals("Normal", System.StringComparison.OrdinalIgnoreCase) || name.Equals("None", System.StringComparison.OrdinalIgnoreCase))
+                return;
+
+            rareAlertCategory = category;
+            rareAlertName = name;
+            rareAlertTimer = RARE_ALERT_DURATION;
+            rareAlertColor = GetAccentColor(category, name);
+        }
+
+        private Color GetAccentColor(string category, string name)
+        {
+            string lower = name.ToLower();
+            if (category.Equals("Stage", System.StringComparison.OrdinalIgnoreCase))
+            {
+                if (lower.Contains("space")) return new Color(0.68f, 0.38f, 0.98f);   // Purple
+                if (lower.Contains("sea")) return new Color(0.15f, 0.75f, 0.95f);     // Aqua Cyan
+                if (lower.Contains("volcano")) return new Color(1.00f, 0.40f, 0.10f); // Solar Orange
+                if (lower.Contains("monoline")) return new Color(0.92f, 0.92f, 0.92f); // Silver
+            }
+            else if (category.Equals("Color", System.StringComparison.OrdinalIgnoreCase))
+            {
+                if (lower.Contains("gold")) return new Color(1.0f, 0.82f, 0.18f);     // Gold
+                if (lower.Contains("silver")) return new Color(0.88f, 0.90f, 0.95f);   // Silver
+                if (lower.Contains("rainbow")) return new Color(0.95f, 0.30f, 0.78f);  // Magenta
+            }
+            else if (category.Equals("Action", System.StringComparison.OrdinalIgnoreCase))
+            {
+                if (lower.Contains("supernova")) return new Color(1.0f, 0.70f, 0.15f);
+                if (lower.Contains("wormhole")) return new Color(0.50f, 0.45f, 1.00f);
+                if (lower.Contains("clone")) return new Color(0.20f, 0.85f, 0.50f);
+                if (lower.Contains("matrix")) return new Color(0.18f, 0.95f, 0.40f);
+                if (lower.Contains("disco")) return new Color(1.00f, 0.28f, 0.62f);
+                if (lower.Contains("tornado")) return new Color(0.28f, 0.72f, 1.00f);
+            }
+            return new Color(0.82f, 0.10f, 0.10f); // Akabeko Red
         }
 
         public void ShowNotification(string msg)
         {
             notificationMessage = msg;
-            notificationTimer = 3.0f;
+            notificationTimer = 2.5f;
         }
 
         private void Update()
         {
             if (notificationTimer > 0) notificationTimer -= Time.deltaTime;
+            if (rareAlertTimer > 0) rareAlertTimer -= Time.deltaTime;
         }
 
         private Texture2D MakeTex(int w, int h, Color c)
@@ -202,6 +262,13 @@ namespace Akabeko
             };
             labelStyle.normal.textColor = new Color(0.2f, 0.2f, 0.2f);
 
+            rareAlertStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter,
+            };
+            rareAlertStyle.normal.textColor = Color.white;
+
             stylesInitialized = true;
         }
 
@@ -222,6 +289,35 @@ namespace Akabeko
             percentStyle.fontSize       = Mathf.RoundToInt(14 * scale);
             saveButtonStyle.fontSize    = Mathf.RoundToInt(18 * scale);
             popupStyle.fontSize         = Mathf.RoundToInt(16 * scale);
+            rareAlertStyle.fontSize     = Mathf.RoundToInt(13 * scale);
+
+            // --- 0. Top Rare Alert Pill (Modern Game HUD Style e.g. Stage : Space) ---
+            if (rareAlertTimer > 0f)
+            {
+                float elapsed = RARE_ALERT_DURATION - rareAlertTimer;
+                float inProgress = Mathf.Clamp01(elapsed / 0.35f);
+                float easeIn = 1f - Mathf.Pow(1f - inProgress, 3f);
+                float alpha = Mathf.Clamp01(rareAlertTimer / 0.5f);
+
+                float targetY = 12f * scale;
+                float startY = -40f * scale;
+                float curAlertY = Mathf.Lerp(startY, targetY, easeIn);
+
+                string alertText = $"✦ {rareAlertCategory} : {rareAlertName}";
+                float alertW = Mathf.Max(200f * scale, alertText.Length * 11.5f * scale + 24f * scale);
+                float alertH = 28f * scale;
+                float alertX = (sw - alertW) * 0.5f;
+
+                Color prevColor = GUI.color;
+                GUI.color = new Color(1f, 1f, 1f, alpha);
+
+                Texture2D pillTex = MakeRounded(220, 28, 14f, new Color(0.06f, 0.08f, 0.12f, 0.90f), rareAlertColor, 1.2f);
+                GUI.DrawTexture(new Rect(alertX, curAlertY, alertW, alertH), pillTex);
+
+                GUI.Label(new Rect(alertX, curAlertY, alertW, alertH), alertText, rareAlertStyle);
+
+                GUI.color = prevColor;
+            }
 
             // --- 1. Title: AKABEKO ---
             float headerTop = 24f * scale;
