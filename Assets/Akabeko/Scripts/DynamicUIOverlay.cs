@@ -324,7 +324,7 @@ namespace Akabeko
                 }
 
                 Rect labelRect = new Rect(x + itemW - 36f * scale, curY + itemH + 4f * scale, 40f * scale, 24f * scale);
-                GUI.Label(labelRect, $"{Mathf.RoundToInt(newPct)}%", percentStyle);
+                GUI.Label(labelRect, FormatPercent(newPct), percentStyle);
             }
 
             curY += rowGapY;
@@ -356,7 +356,7 @@ namespace Akabeko
                 }
 
                 Rect labelRect = new Rect(x + itemW - 36f * scale, curY + itemH + 4f * scale, 40f * scale, 24f * scale);
-                GUI.Label(labelRect, $"{Mathf.RoundToInt(newPct)}%", percentStyle);
+                GUI.Label(labelRect, FormatPercent(newPct), percentStyle);
             }
 
             curY += rowGapY;
@@ -419,7 +419,7 @@ namespace Akabeko
                 }
 
                 Rect labelRect = new Rect(x + itemW - 36f * scale, itemH + 4f * scale, 40f * scale, 24f * scale);
-                GUI.Label(labelRect, $"{Mathf.RoundToInt(newPct)}%", percentStyle);
+                GUI.Label(labelRect, FormatPercent(newPct), percentStyle);
             }
 
             GUI.EndScrollView();
@@ -468,6 +468,13 @@ namespace Akabeko
                 rareMotionSystem.SendMessage("ChangeColor", data, SendMessageOptions.DontRequireReceiver);
             }
             ShowNotification(id);
+        }
+
+        private string FormatPercent(float pct)
+        {
+            if (pct <= 0.0001f) return "0%";
+            if (pct < 1f) return $"{pct:F1}%";
+            return $"{Mathf.RoundToInt(pct)}%";
         }
     }
 }
