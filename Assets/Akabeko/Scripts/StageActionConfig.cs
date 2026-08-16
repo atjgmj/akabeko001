@@ -124,7 +124,7 @@ namespace Akabeko
         private static StageActionConfig instance;
         public static StageActionConfig Instance => instance;
 
-        private const string PREFS_KEY = "Akabeko_StageActionConfig_Save_V4";
+        private const string PREFS_KEY = "Akabeko_StageActionConfig_Save_V5";
 
         [Header("1. Color Probabilities")]
         [SerializeField]
@@ -152,7 +152,7 @@ namespace Akabeko
         private List<StageActionEntry> stages = new List<StageActionEntry>
         {
             new StageActionEntry { stageName = "default",  none = 0.980f, bobbing = 0.00f, flyAway = 0.005f, spin = 0.002f, shake = 0.002f, scalePulse = 0.002f, superNova = 0.001f, wormhole = 0.001f, clones = 0.002f, matrixGlitch = 0.002f, discoParty = 0.001f, tornado = 0.002f, sound = 0f },
-            new StageActionEntry { stageName = "space",    none = 0.000f, bobbing = 1.00f, flyAway = 0.010f, spin = 0.010f, shake = 0.000f, scalePulse = 0.010f, superNova = 0.015f, wormhole = 0.015f, clones = 0.010f, matrixGlitch = 0.010f, discoParty = 0.010f, tornado = 0.010f, sound = 0f },
+            new StageActionEntry { stageName = "space",    none = 0.900f, bobbing = 1.00f, flyAway = 0.010f, spin = 0.010f, shake = 0.000f, scalePulse = 0.010f, superNova = 0.015f, wormhole = 0.015f, clones = 0.010f, matrixGlitch = 0.010f, discoParty = 0.010f, tornado = 0.010f, sound = 0f },
             new StageActionEntry { stageName = "sea",      none = 0.880f, bobbing = 0.50f, flyAway = 0.005f, spin = 0.005f, shake = 0.005f, scalePulse = 0.005f, superNova = 0.005f, wormhole = 0.010f, clones = 0.005f, matrixGlitch = 0.005f, discoParty = 0.010f, tornado = 0.005f, sound = 0f },
             new StageActionEntry { stageName = "volcano",  none = 0.850f, bobbing = 0.00f, flyAway = 0.010f, spin = 0.005f, shake = 0.010f, scalePulse = 0.005f, superNova = 0.015f, wormhole = 0.005f, clones = 0.005f, matrixGlitch = 0.010f, discoParty = 0.005f, tornado = 0.015f, sound = 0f },
             new StageActionEntry { stageName = "monoline", none = 0.880f, bobbing = 0.10f, flyAway = 0.005f, spin = 0.010f, shake = 0.005f, scalePulse = 0.005f, superNova = 0.005f, wormhole = 0.005f, clones = 0.010f, matrixGlitch = 0.015f, discoParty = 0.005f, tornado = 0.005f, sound = 0f },
